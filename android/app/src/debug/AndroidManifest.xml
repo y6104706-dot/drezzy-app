@@ -1,4 +1,3 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Allows debug builds to use cleartext HTTP traffic (e.g. Firebase Emulator) -->
     <application android:usesCleartextTraffic="true"/>
 </manifest>

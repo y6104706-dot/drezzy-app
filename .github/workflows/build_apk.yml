@@ -11,53 +11,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ── Java ──────────────────────────────────────────────────────────────────
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # ── Flutter (before Gradle so FLUTTER_ROOT is available) ──────────────────
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.2'
           channel: 'stable'
           cache: true
 
-      # android/local.properties is in .gitignore and never committed.
-      # Gradle reads flutter.sdk (Flutter SDK path) and sdk.dir (Android SDK)
-      # from this file. Both must be written before any Gradle task runs.
-      - name: Create android/local.properties
-        run: |
-          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
-          echo "sdk.dir=$ANDROID_HOME"    >> android/local.properties
-
-      # ── Gradle ────────────────────────────────────────────────────────────────
-      # gradle/actions/setup-gradle unconditionally validates the wrapper jar
-      # checksum and cannot be disabled — it fails on the corrupted jar before
-      # we can replace it. Download Gradle 8.3 directly from the official CDN
-      # and use it to regenerate the wrapper jar in-place instead.
-      - name: Download Gradle and regenerate wrapper
-        working-directory: android
-        run: |
-          wget -q https://services.gradle.org/distributions/gradle-8.3-bin.zip \
-               -O /tmp/gradle-8.3-bin.zip
-          unzip -q /tmp/gradle-8.3-bin.zip -d /tmp/gradle-install
-          /tmp/gradle-install/gradle-8.3/bin/gradle wrapper \
-            --gradle-version 8.3 \
-            --distribution-type all
-          chmod +x gradlew
-
-      # ── Dependencies + Build ──────────────────────────────────────────────────
       - name: Install dependencies
         run: flutter pub get
 
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
 
-      # ── Artifact ──────────────────────────────────────────────────────────────
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
