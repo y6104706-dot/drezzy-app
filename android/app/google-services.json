@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "98961097954",
+    "project_id": "polyai-426af",
+    "storage_bucket": "polyai-426af.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:98961097954:android:91627ea37ac4146aa6cabb",
+        "android_client_info": {
+          "package_name": "com.drezzy.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBjjMarQH3pyFKGPlCiYBjLUgYpIkXmiCM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

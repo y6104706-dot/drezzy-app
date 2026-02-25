@@ -1,25 +1,48 @@
 name: Build Flutter APK
+
 on:
   push:
     branches: [ 'main', 'master' ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '17'
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+
+      # flutter create generates the missing android/ ios/ platform folders.
+      # It will not touch files that already exist (lib/, pubspec.yaml, etc.).
+      # We explicitly restore the key files with `git checkout` just in case
+      # flutter create regenerates them with defaults.
+      - name: Generate native platform folders
+        run: |
+          flutter create --org com.drezzy --project-name drezzy_app .
+          git checkout -- pubspec.yaml lib/ .gitignore
+
+      # Place google-services.json where the Gradle plugin expects it.
+      # The file is already committed at android/app/google-services.json —
+      # flutter create may have removed android/app/, so we restore it.
+      - name: Restore google-services.json
+        run: git checkout -- android/app/google-services.json
+
       - name: Install dependencies
         run: flutter pub get
+
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
+
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:

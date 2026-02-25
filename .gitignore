@@ -38,9 +38,9 @@ Podfile.lock
 # ── Firebase ─────────────────────────────────────────────────────────────────
 # Secret env files — NEVER committed
 functions/.env
-# Native config files contain API keys — download from Firebase Console
-google-services.json
-GoogleService-Info.plist
+# google-services.json and GoogleService-Info.plist are safe to commit:
+# they contain only public app identifiers, not server secrets.
+# (Server secrets live in functions/.env which IS excluded above)
 
 # ── Node / Cloud Functions ────────────────────────────────────────────────────
 functions/node_modules/
