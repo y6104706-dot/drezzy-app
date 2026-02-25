@@ -18,7 +18,12 @@ Future<void> main() async {
 
   // Stripe must be initialised before runApp so that the PaymentService
   // provider is ready as soon as the widget tree mounts.
-  PaymentService.initialize();
+  // Wrapped in try-catch: on web the key may be incomplete during development.
+  try {
+    PaymentService.initialize();
+  } catch (e) {
+    debugPrint('[Stripe] Skipped initialisation: $e');
+  }
 
   await _initFirebase();
 

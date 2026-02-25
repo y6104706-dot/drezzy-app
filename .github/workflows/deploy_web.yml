@@ -1,0 +1,72 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ 'main', 'master' ]
+  workflow_dispatch:   # allows manual trigger from the Actions tab
+
+# Grant the GITHUB_TOKEN permissions required by actions/deploy-pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deployment runs at a time; cancel any in-progress run
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      # ── 1. Source ────────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+
+      # ── 2. Flutter ───────────────────────────────────────────────────────────
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      # ── 3. Web platform assets ───────────────────────────────────────────────
+      # flutter create adds the missing web/icons/*.png and favicon.png that
+      # we cannot commit as binaries. We restore our custom index.html and
+      # manifest.json afterwards so branding/meta-tags are correct.
+      - name: Generate web platform assets
+        run: |
+          flutter create --platforms web \
+            --org com.drezzy \
+            --project-name drezzy_app \
+            .
+          git checkout -- web/index.html web/manifest.json
+
+      # ── 4. Dependencies ──────────────────────────────────────────────────────
+      - name: Install dependencies
+        run: flutter pub get
+
+      # ── 5. Build ─────────────────────────────────────────────────────────────
+      # --base-href must match the GitHub Pages path: /<repo-name>/
+      - name: Build Flutter Web
+        run: |
+          flutter build web \
+            --release \
+            --web-renderer canvaskit \
+            --base-href "/drezzy-app/"
+
+      # ── 6. Upload artifact ───────────────────────────────────────────────────
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'build/web'
+
+      # ── 7. Deploy ────────────────────────────────────────────────────────────
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
