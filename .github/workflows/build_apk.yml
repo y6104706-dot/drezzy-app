@@ -20,13 +20,20 @@ jobs:
 
       # ── Gradle ────────────────────────────────────────────────────────────────
       # Install Gradle 8.3 system-wide so we can regenerate the wrapper jar.
-      # The gradle-wrapper.jar committed in the repo is corrupted (HTML file);
-      # this step replaces it with a valid binary before Flutter invokes gradlew.
+      # The gradle-wrapper.jar committed in the repo is corrupted (HTML file).
+      # wrapper-validation-enabled: false  — skip the checksum validation that
+      #   would fail-fast on the corrupted jar before we get a chance to replace it.
+      # dependency-graph: disabled         — we don't need the dependency graph
+      #   submission and it requires a valid wrapper to run.
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.3'
+          wrapper-validation-enabled: false
+          dependency-graph: disabled
 
+      # Regenerate wrapper FIRST — overwrites the corrupted jar with a valid
+      # binary so every subsequent Gradle invocation (including Flutter's) works.
       - name: Regenerate Gradle wrapper
         working-directory: android
         run: |
