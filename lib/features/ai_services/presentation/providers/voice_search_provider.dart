@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
@@ -113,6 +114,14 @@ class VoiceSearchNotifier extends Notifier<VoiceSearchState> {
   Future<void> startListening() async {
     // Reset to a clean initialising slate (clears transcript, response, result).
     state = const VoiceSearchState(status: VoiceStatus.initializing);
+
+    // Request microphone permission before starting speech recognition.
+    // Without this, Android may not show the permission prompt and STT fails.
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) {
+      state = const VoiceSearchState(status: VoiceStatus.permissionDenied);
+      return;
+    }
 
     if (!_initialized) {
       _initialized = await _speech.initialize(
