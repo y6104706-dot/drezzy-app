@@ -124,10 +124,19 @@ class VoiceSearchNotifier extends Notifier<VoiceSearchState> {
     }
 
     if (!_initialized) {
-      _initialized = await _speech.initialize(
-        onError: _onError,
-        onStatus: _onSttStatus,
-      );
+      // Small delay to let Android fully register the permission grant
+      // before the STT engine attempts to initialise.
+      await Future.delayed(const Duration(milliseconds: 500));
+      try {
+        _initialized = await _speech.initialize(
+          onError: _onError,
+          onStatus: _onSttStatus,
+        );
+      } catch (e) {
+        debugPrint('[VoiceSearch] speech.initialize() threw: $e');
+        state = const VoiceSearchState(status: VoiceStatus.error);
+        return;
+      }
     }
 
     if (!_initialized) {
