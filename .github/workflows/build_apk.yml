@@ -22,14 +22,17 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.41.2'
           channel: 'stable'
           cache: true
 
       # android/local.properties is in .gitignore and never committed.
-      # Gradle requires flutter.sdk to point at the Flutter SDK or it cannot
-      # locate flutter.gradle and the build fails with "Flutter SDK not found".
+      # Gradle reads flutter.sdk (Flutter SDK path) and sdk.dir (Android SDK)
+      # from this file. Both must be written before any Gradle task runs.
       - name: Create android/local.properties
-        run: echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+        run: |
+          echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+          echo "sdk.dir=$ANDROID_HOME"    >> android/local.properties
 
       # ── Gradle ────────────────────────────────────────────────────────────────
       # gradle/actions/setup-gradle unconditionally validates the wrapper jar
