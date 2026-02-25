@@ -18,11 +18,24 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      # ── Flutter (before Gradle so FLUTTER_ROOT is available) ──────────────────
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      # android/local.properties is in .gitignore and never committed.
+      # Gradle requires flutter.sdk to point at the Flutter SDK or it cannot
+      # locate flutter.gradle and the build fails with "Flutter SDK not found".
+      - name: Create android/local.properties
+        run: echo "flutter.sdk=$FLUTTER_ROOT" > android/local.properties
+
       # ── Gradle ────────────────────────────────────────────────────────────────
       # gradle/actions/setup-gradle unconditionally validates the wrapper jar
       # checksum and cannot be disabled — it fails on the corrupted jar before
-      # we can replace it. Instead, download Gradle 8.3 directly from the
-      # official CDN and use it to regenerate the wrapper jar in-place.
+      # we can replace it. Download Gradle 8.3 directly from the official CDN
+      # and use it to regenerate the wrapper jar in-place instead.
       - name: Download Gradle and regenerate wrapper
         working-directory: android
         run: |
@@ -34,17 +47,10 @@ jobs:
             --distribution-type all
           chmod +x gradlew
 
-      # ── Flutter ───────────────────────────────────────────────────────────────
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-          cache: true
-
+      # ── Dependencies + Build ──────────────────────────────────────────────────
       - name: Install dependencies
         run: flutter pub get
 
-      # ── Build ─────────────────────────────────────────────────────────────────
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
 
