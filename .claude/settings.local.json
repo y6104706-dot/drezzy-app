@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tail:*)",
+      "Bash(export PATH=\"$PATH:/c/Users/y6104/flutter/bin\" && cd /c/drezzy_app && flutter analyze lib/features/listings/presentation/screens/discovery_feed_screen.dart 2>&1)",
+      "Bash(cmd:*)"
+    ]
+  }
+}

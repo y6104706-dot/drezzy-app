@@ -1,0 +1,49 @@
+name: drezzy_app
+description: "Drezzy — Peer-to-peer fashion rental marketplace powered by AI."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI & Fonts
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+
+  # Firebase
+  firebase_core: ^3.8.0
+  firebase_auth: ^5.4.1
+  cloud_firestore: ^5.6.0
+  cloud_functions: ^5.3.0
+  firebase_storage: ^12.3.7
+  firebase_messaging: ^15.2.5
+
+  # State Management
+  riverpod: ^2.6.1
+  flutter_riverpod: ^2.6.1
+
+  # Routing
+  go_router: ^14.6.2
+
+  # UI & Images
+  cached_network_image: ^3.4.1
+
+  # Payments
+  flutter_stripe: ^10.2.0
+
+  # Voice
+  speech_to_text: ^7.0.0
+  flutter_tts: ^4.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,157 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────
+
+    // True when the request comes from a signed-in user.
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // True when the signed-in user owns the document being accessed.
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Validate that incoming listing data has the required fields,
+    // that category is one of the permitted values, and that the
+    // caller is setting themselves as the lender.
+    function isValidListing() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['lenderId', 'title', 'description', 'category',
+                                  'pricePerDay', 'imageUrl', 'isFaceSwapped', 'location', 'status'])
+          && data.category in ['dress', 'shoes', 'bag', 'accessory']
+          && data.status in ['available', 'rented', 'unavailable']
+          && data.pricePerDay is number
+          && data.pricePerDay > 0
+          && data.isFaceSwapped is bool
+          && data.lenderId == request.auth.uid;
+    }
+
+    // Validate that incoming booking data has the required fields,
+    // that drezzyFee is exactly 20% of totalPrice (within floating-point
+    // tolerance), and that the caller is the renter.
+    function isValidBooking() {
+      let data = request.resource.data;
+      let expectedFee = data.totalPrice * 0.20;
+      // Allow up to 1 cent of floating-point drift.
+      let feeIsCorrect = data.drezzyFee >= expectedFee - 0.01
+                      && data.drezzyFee <= expectedFee + 0.01;
+      return data.keys().hasAll(['listingId', 'renterId', 'lenderId',
+                                  'startDate', 'endDate', 'status',
+                                  'totalPrice', 'drezzyFee'])
+          && data.status in ['pending', 'confirmed', 'active',
+                              'returned', 'disputed', 'cancelled']
+          && data.totalPrice is number
+          && data.totalPrice > 0
+          && data.drezzyFee is number
+          && feeIsCorrect
+          && data.renterId == request.auth.uid;
+    }
+
+    // Validate that incoming review data has the required fields,
+    // a valid rating (1–5), and that the caller is the author.
+    function isValidReview() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['bookingId', 'authorId', 'targetId',
+                                  'targetType', 'rating', 'body'])
+          && data.targetType in ['user', 'listing']
+          && data.rating is number
+          && data.rating >= 1
+          && data.rating <= 5
+          && data.authorId == request.auth.uid;
+    }
+
+    // ─────────────────────────────────────────────
+    // users/{userId}
+    // ─────────────────────────────────────────────
+    match /users/{userId} {
+
+      // A user can only read and write their own profile document.
+      allow read, write: if isOwner(userId);
+    }
+
+    // ─────────────────────────────────────────────
+    // listings/{listingId}
+    // ─────────────────────────────────────────────
+    match /listings/{listingId} {
+
+      // Anyone (even unauthenticated) can read a listing that is 'available'.
+      // The lender can always read their own listings regardless of status.
+      allow read: if resource.data.status == 'available'
+                  || isOwner(resource.data.lenderId);
+
+      // Only an authenticated user can create a listing for themselves.
+      allow create: if isAuthenticated() && isValidListing();
+
+      // Only the lender can update their own listing.
+      // lenderId must never change after creation.
+      allow update: if isOwner(resource.data.lenderId)
+                    && isValidListing()
+                    && request.resource.data.lenderId == resource.data.lenderId;
+
+      allow delete: if isOwner(resource.data.lenderId);
+    }
+
+    // ─────────────────────────────────────────────
+    // bookings/{bookingId}
+    // ─────────────────────────────────────────────
+    match /bookings/{bookingId} {
+
+      // The renter and the lender can read a booking document.
+      allow read: if isAuthenticated()
+                  && (request.auth.uid == resource.data.renterId
+                   || request.auth.uid == resource.data.lenderId);
+
+      // Only the renter themselves can create a booking (for themselves).
+      allow create: if isAuthenticated() && isValidBooking();
+
+      // Status transitions (enforced at the application layer):
+      //   - Lender: pending → confirmed, confirmed → active
+      //   - Renter: pending → cancelled, active → returned
+      //   - Either: active → disputed
+      // The rules below enforce that:
+      //   a) Only the renter or lender may update.
+      //   b) Financial fields are immutable after creation.
+      //   c) The new status is one of the six valid values.
+      allow update: if isAuthenticated()
+                    && (request.auth.uid == resource.data.lenderId
+                     || request.auth.uid == resource.data.renterId)
+                    // Core identifiers and financial fields are immutable.
+                    && request.resource.data.totalPrice  == resource.data.totalPrice
+                    && request.resource.data.drezzyFee   == resource.data.drezzyFee
+                    && request.resource.data.listingId   == resource.data.listingId
+                    && request.resource.data.renterId    == resource.data.renterId
+                    && request.resource.data.lenderId    == resource.data.lenderId
+                    && request.resource.data.status in ['pending', 'confirmed', 'active',
+                                                         'returned', 'disputed', 'cancelled'];
+
+      // Bookings are never hard-deleted (preserve financial audit trail).
+      allow delete: if false;
+    }
+
+    // ─────────────────────────────────────────────
+    // reviews/{reviewId}
+    // ─────────────────────────────────────────────
+    match /reviews/{reviewId} {
+
+      // Any authenticated user can read reviews (e.g. to display ratings
+      // on listing detail or user profile screens).
+      allow read: if isAuthenticated();
+
+      // Only the author can create a review, and they must set themselves
+      // as the author. Rating must be 1–5.
+      allow create: if isAuthenticated() && isValidReview();
+
+      // Reviews are immutable once submitted — no edits allowed.
+      allow update: if false;
+
+      // Reviews are permanent — no deletions (preserves trust signal).
+      allow delete: if false;
+    }
+  }
+}
