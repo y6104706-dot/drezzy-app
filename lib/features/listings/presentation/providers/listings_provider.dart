@@ -250,7 +250,7 @@ final List<ListingModel> _mockListings = [
     lenderId: 'user_g',
     title: 'Gold Sequin Slip',
     description:
-        'Slinky gold sequin slip dress. The ultimate New Year's Eve / party piece.',
+        "Slinky gold sequin slip dress. The ultimate New Year's Eve / party piece.",
     category: 'dress',
     brand: 'Retrofête',
     size: 'S',

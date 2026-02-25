@@ -29,13 +29,13 @@ abstract final class DrezzyColors {
 }
 
 // ─── Typography ────────────────────────────────────────────────────────────
-// Headlines → Cormorant Garant  (high-fashion editorial serif)
-// Body/UI   → DM Sans           (clean, modern grotesque)
+// Headlines → Cormorant Garamond  (high-fashion editorial serif)
+// Body/UI   → DM Sans             (clean, modern grotesque)
 // ──────────────────────────────────────────────────────────────────────────
 
 abstract final class DrezzyTextTheme {
   static TextTheme build(ColorScheme scheme) {
-    final serif = GoogleFonts.cormorantGarant;
+    final serif = GoogleFonts.cormorantGaramond;
     final sans = GoogleFonts.dmSans;
 
     return TextTheme(
@@ -264,7 +264,7 @@ abstract final class DrezzyTheme {
       ),
 
       // Cards — subtle elevation
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: scheme.surfaceContainer,
         elevation: 0,
         shape: RoundedRectangleBorder(
