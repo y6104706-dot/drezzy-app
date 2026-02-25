@@ -11,23 +11,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ── Java ──────────────────────────────────────────────────────────────────
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
+      # ── Gradle ────────────────────────────────────────────────────────────────
+      # Install Gradle 8.3 system-wide so we can regenerate the wrapper jar.
+      # The gradle-wrapper.jar committed in the repo is corrupted (HTML file);
+      # this step replaces it with a valid binary before Flutter invokes gradlew.
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.3'
+
+      - name: Regenerate Gradle wrapper
+        working-directory: android
+        run: |
+          gradle wrapper --gradle-version 8.3 --distribution-type all
+          chmod +x gradlew
+
+      # ── Flutter ───────────────────────────────────────────────────────────────
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
 
       - name: Install dependencies
         run: flutter pub get
 
+      # ── Build ─────────────────────────────────────────────────────────────────
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
 
+      # ── Artifact ──────────────────────────────────────────────────────────────
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
